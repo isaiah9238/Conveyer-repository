@@ -5,7 +5,7 @@
  *
  * - summarizeExternalContent - A function that handles the content summarization process.
  * - SummarizeExternalContentInput - The input type for the summarizeExternalContent function.
- * - SummarizeExternalContentOutput - The return type for the summarizeExternalContent function.
+ * - SummarizeExternalContentOutput - The return type for the summarizeExternalContent function, which is a string.
  */
 
 import { ai } from '@/ai/genkit';
@@ -20,8 +20,15 @@ const SummarizeExternalContentInputSchema = z.object({
 });
 export type SummarizeExternalContentInput = z.infer<typeof SummarizeExternalContentInputSchema>;
 
-const SummarizeExternalContentOutputSchema = z.string().describe('A concise and accurate summary of the provided content.');
-export type SummarizeExternalContentOutput = z.infer<typeof SummarizeExternalContentOutputSchema>;
+// The output schema is an object containing the summary. This is more robust for Genkit's structured output.
+const SummarizeExternalContentFlowOutputSchema = z.object({
+  summary: z.string().describe('A concise and accurate summary of the provided content.'),
+});
+// This is the type for the flow's internal return value.
+type SummarizeExternalContentFlowOutput = z.infer<typeof SummarizeExternalContentFlowOutputSchema>;
+
+// The exported function will still return a string to maintain the contract with the client.
+export type SummarizeExternalContentOutput = string;
 
 // Helper function to extract text from a web page.
 async function extractTextFromUrl(url: string): Promise<string> {
@@ -82,15 +89,15 @@ async function extractTextFromUrl(url: string): Promise<string> {
 const summarizePrompt = ai.definePrompt({
   name: 'summarizeExternalContentPrompt',
   input: { schema: z.object({ textToSummarize: z.string() }) },
-  output: { schema: SummarizeExternalContentOutputSchema },
-  prompt: `Please provide a concise and accurate summary of the following content, highlighting the key information and main points. The summary should be easy to understand and suitable for quick review.\n\nContent to summarize:\n{{{textToSummarize}}} `,
+  output: { schema: SummarizeExternalContentFlowOutputSchema },
+  prompt: `Please provide a concise and accurate summary of the following content, highlighting the key information and main points. The summary should be easy to understand and suitable for quick review. Respond with a JSON object with a 'summary' field.\n\nContent to summarize:\n{{{textToSummarize}}} `,
 });
 
 const summarizeExternalContentFlow = ai.defineFlow(
   {
     name: 'summarizeExternalContentFlow',
     inputSchema: SummarizeExternalContentInputSchema,
-    outputSchema: SummarizeExternalContentOutputSchema,
+    outputSchema: SummarizeExternalContentFlowOutputSchema,
   },
   async (input) => {
     let textContent: string;
@@ -120,5 +127,6 @@ const summarizeExternalContentFlow = ai.defineFlow(
 export async function summarizeExternalContent(
   input: SummarizeExternalContentInput
 ): Promise<SummarizeExternalContentOutput> {
-  return summarizeExternalContentFlow(input);
+  const result = await summarizeExternalContentFlow(input);
+  return result.summary;
 }
