@@ -1,3 +1,10 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "background",
+      "description": "A subtle desk texture background for the application.",
+      "imageUrl": "https://picsum.photos/seed/noteflowbg/1920/1080",
+      "imageHint": "desk texture"
+    }
+  ]
 }
