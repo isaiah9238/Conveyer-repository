@@ -24,31 +24,60 @@ const SummarizeExternalContentOutputSchema = z.string().describe('A concise and 
 export type SummarizeExternalContentOutput = z.infer<typeof SummarizeExternalContentOutputSchema>;
 
 // Helper function to extract text from a web page.
-// This is a basic implementation and might not work for all pages
-// (e.g., heavily JavaScript-rendered pages or pages with complex structures).
-// A more robust solution would involve a dedicated scraping library.
 async function extractTextFromUrl(url: string): Promise<string> {
+  let response: Response;
   try {
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error(`Failed to fetch URL: ${response.statusText}`);
+    // Set a timeout for the fetch request
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10-second timeout
+    response = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeoutId);
+  } catch (error: any) {
+    console.error(`Fetch failed for URL ${url}:`, error);
+    if (error.name === 'AbortError') {
+      throw new Error("The request timed out as the server is slow to respond.");
     }
-    const html = await response.text();
-    // Basic HTML stripping. This won't handle all cases but helps extract plain text.
-    // Replace script, style, and HTML comments first
-    let text = html.replace(/<script[^>]*>.*?<\/script>/gis, '')
-                   .replace(/<style[^>]*>.*?<\/style>/gis, '')
-                   .replace(/<!--.*?-->/gs, '');
-    // Replace all other HTML tags with a space to prevent words from merging
-    text = text.replace(/<[^>]+>/g, ' ');
-    // Normalize whitespace
-    text = text.replace(/\s+/g, ' ').trim();
-    return text;
-  } catch (error) {
-    console.error(`Error extracting text from URL ${url}:`, error);
-    throw new Error(`Could not extract content from the provided URL: ${url}`);
+    if (error.cause?.code === 'ENOTFOUND') {
+      throw new Error("The website could not be found. Please check if the URL is correct.");
+    }
+    throw new Error("Failed to reach the URL. It might be offline or an invalid address.");
   }
+
+  if (!response.ok) {
+    if (response.status === 404) {
+      throw new Error("The page was not found at the given URL (404 Not Found).");
+    }
+    if (response.status === 401 || response.status === 403) {
+      throw new Error(`Access to this URL is restricted (Error ${response.status}). This content is private and cannot be summarized.`);
+    }
+    if (response.status >= 500) {
+      throw new Error(`The server for the URL is having problems (Error ${response.status}). Please try again later.`);
+    }
+    throw new Error(`Could not fetch the page. The server responded with an error: ${response.status} ${response.statusText}.`);
+  }
+
+  const contentType = response.headers.get('content-type');
+  if (contentType && !contentType.includes('text/html') && !contentType.includes('text/plain')) {
+    throw new Error(`Content type '${contentType}' is not supported. Only text-based web pages can be summarized, not files like PDFs or images.`);
+  }
+
+  const html = await response.text();
+  // Basic HTML stripping. This is a naive implementation.
+  let text = html
+    .replace(/<style[^>]*>.*?<\/style>/gs, ' ')
+    .replace(/<script[^>]*>.*?<\/script>/gs, ' ')
+    .replace(/<!--.*?-->/gs, '')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  if (!text) {
+    throw new Error("Could not extract readable text from the URL. The page might be empty or use a format that is not supported for summarization.");
+  }
+
+  return text;
 }
+
 
 const summarizePrompt = ai.definePrompt({
   name: 'summarizeExternalContentPrompt',
@@ -67,24 +96,22 @@ const summarizeExternalContentFlow = ai.defineFlow(
     let textContent: string;
 
     if (input.url) {
-      // Prioritize URL if provided
+      // The new extractTextFromUrl will throw specific errors which will be caught by the caller.
       textContent = await extractTextFromUrl(input.url);
     } else if (input.content) {
-      // Fallback to direct content if no URL or URL extraction fails
       textContent = input.content;
     } else {
-      // This case should ideally be caught by the refine() in the schema
-      throw new Error("No content or URL provided for summarization.");
+      // This path is unlikely due to Zod schema refinement, but it's a safe fallback.
+      throw new Error("No content or URL was provided for summarization.");
     }
 
     if (!textContent.trim()) {
-        throw new Error("No meaningful content found to summarize after processing input.");
+      throw new Error("No meaningful content was found to summarize.");
     }
 
-    // Check if the content is too long for the model, if needed. For now, pass directly.
     const { output } = await summarizePrompt({ textToSummarize: textContent });
     if (!output) {
-        throw new Error("Failed to generate summary.");
+        throw new Error("Failed to generate summary from the content.");
     }
     return output;
   }
