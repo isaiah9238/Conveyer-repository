@@ -168,12 +168,12 @@ export function NotePanel({ note, onUpdate, onClose, onSplit, onFocus }: NotePan
                 {note.isDocked ? (
                     <div className='flex items-center gap-2 w-full h-full cursor-grab active:cursor-grabbing px-2'>
                         <GripVertical className='text-muted-foreground' />
-                        <span className='font-bold text-lg'>N</span>
+                        <span className='font-bold text-lg'>C</span>
                     </div>
                 ) : (
                     <Menubar className="border-none bg-transparent shadow-none h-auto p-0">
                         <MenubarMenu>
-                            <MenubarTrigger className="font-semibold text-lg">NoteFlow</MenubarTrigger>
+                            <MenubarTrigger className="font-semibold text-lg">Conveyer</MenubarTrigger>
                             <MenubarContent>
                                 <MenubarItem onClick={onSplit}><FilePlus2 className="mr-2 h-4 w-4" /> Split Page</MenubarItem>
                                 <MenubarItem onClick={handleCopy}>Copy Content</MenubarItem>
@@ -254,9 +254,9 @@ export function NotePanel({ note, onUpdate, onClose, onSplit, onFocus }: NotePan
       <AlertDialog open={isInfoOpen} onOpenChange={setIsInfoOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>About NoteFlow</AlertDialogTitle>
+            <AlertDialogTitle>About Conveyer</AlertDialogTitle>
             <AlertDialogDescription>
-              A fluid, always-on-top note-taking application designed for seamless information transfer and management.
+              A fluid, always-on-top information conveyor designed for seamless information transfer and management.
               <br/><br/>
               Version 1.0.0
             </AlertDialogDescription>

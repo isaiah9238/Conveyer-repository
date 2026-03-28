@@ -3,8 +3,8 @@ import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 
 export const metadata: Metadata = {
-  title: 'NoteFlow',
-  description: 'A fluid note-taking application.',
+  title: 'Conveyer',
+  description: 'A fluid information conveyor.',
 };
 
 export default function RootLayout({

@@ -11,7 +11,7 @@ import { FilePlus2 } from 'lucide-react';
 
 const initialNote: Note = {
   id: `note-${Date.now()}`,
-  content: `Welcome to NoteFlow!
+  content: `Welcome to Conveyer!
 
 - Drag to move this window.
 - Resize from the bottom-right corner.
@@ -116,8 +116,8 @@ export default function Home() {
       {notes.length === 0 && (
          <div className="absolute inset-0 flex items-center justify-center">
             <div className="text-center p-8 bg-card/80 backdrop-blur-sm rounded-lg shadow-2xl border">
-              <h1 className="text-4xl font-bold font-headline text-foreground">Welcome to NoteFlow</h1>
-              <p className="text-muted-foreground mt-2">A fluid, always-on-top note-taking experience.</p>
+              <h1 className="text-4xl font-bold font-headline text-foreground">Welcome to Conveyer</h1>
+              <p className="text-muted-foreground mt-2">A fluid, always-on-top information conveyor.</p>
               <Button onClick={handleCreateFirstNote} size="lg" className="mt-6">
                  <FilePlus2 className="mr-2 h-5 w-5" /> Create Your First Note
               </Button>
