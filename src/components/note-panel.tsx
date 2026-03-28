@@ -35,9 +35,8 @@ import {
   Sparkles,
   Dock,
   Expand,
-  Contract,
+  Shrink,
   Maximize,
-  Minimize,
   Eye,
   EyeOff,
   GripVertical
@@ -205,7 +204,7 @@ export function NotePanel({ note, onUpdate, onClose, onSplit, onFocus }: NotePan
                                   {note.isDocked ? 'Undock' : 'Dock'}
                                 </MenubarItem>
                                 <MenubarItem onClick={toggleMaximize}>
-                                  {note.isMaximized ? <Contract className="mr-2 h-4 w-4" /> : <Expand className="mr-2 h-4 w-4" />}
+                                  {note.isMaximized ? <Shrink className="mr-2 h-4 w-4" /> : <Expand className="mr-2 h-4 w-4" />}
                                   {note.isMaximized ? 'Restore' : 'Maximize'}
                                 </MenubarItem>
                             </MenubarContent>
