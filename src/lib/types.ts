@@ -10,4 +10,5 @@ export type Note = {
   isTransparent: boolean;
   isDissolved: boolean;
   zIndex: number;
+  dissolvedContent?: string;
 };

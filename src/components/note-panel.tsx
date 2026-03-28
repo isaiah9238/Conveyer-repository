@@ -118,7 +118,7 @@ export function NotePanel({ note, onUpdate, onClose, onSplit, onFocus }: NotePan
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [handleMouseMove]);
+  }, [handleMouseMove, handleMouseUp]);
   
   const handleCopy = () => {
     navigator.clipboard.writeText(note.content);
@@ -132,7 +132,30 @@ export function NotePanel({ note, onUpdate, onClose, onSplit, onFocus }: NotePan
   const toggleDock = () => onUpdate({ id: note.id, isDocked: !note.isDocked, isMaximized: false });
   const toggleMaximize = () => onUpdate({ id: note.id, isMaximized: !note.isMaximized, isDocked: false });
   const toggleTransparency = () => onUpdate({ id: note.id, isTransparent: !note.isTransparent });
-  const toggleDissolve = () => onUpdate({ id: note.id, isDissolved: !note.isDissolved });
+
+  const toggleDissolve = () => {
+    if (note.isDissolved) {
+      // Restore
+      const restoredText = note.dissolvedContent || '';
+      const newContent = note.content
+        ? `${note.content}\n\n${restoredText}`.trim()
+        : restoredText;
+      onUpdate({
+        id: note.id,
+        isDissolved: false,
+        content: newContent,
+        dissolvedContent: undefined,
+      });
+    } else {
+      // Dissolve
+      if (note.content) {
+        onUpdate({ id: note.id, isDissolved: true, dissolvedContent: note.content });
+      } else {
+        // Nothing to dissolve, just toggle state to allow writing and then restoring nothing.
+        onUpdate({ id: note.id, isDissolved: true, dissolvedContent: '' });
+      }
+    }
+  };
 
   const panelStyle: React.CSSProperties = {
     '--min-width': `${MIN_WIDTH}px`,
@@ -228,10 +251,15 @@ export function NotePanel({ note, onUpdate, onClose, onSplit, onFocus }: NotePan
                 placeholder="Start typing..."
                 className={cn(
                   'w-full h-full resize-none border-none focus-visible:ring-0 focus-visible:ring-offset-0 p-4 select-text',
-                  note.isDissolved && 'animate-dissolve pointer-events-none'
+                  note.isDissolved && note.content ? 'animate-dissolve' : ''
                 )}
                 value={note.content}
                 onChange={e => onUpdate({ id: note.id, content: e.target.value })}
+                onAnimationEnd={(e) => {
+                  if (e.animationName === 'dissolve' && note.isDissolved) {
+                    onUpdate({ id: note.id, content: '' });
+                  }
+                }}
               />
             </CardContent>
           )}
