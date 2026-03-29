@@ -38,9 +38,12 @@ import {
   Shrink,
   Eye,
   EyeOff,
-  GripVertical
+  GripVertical,
+  Lightbulb,
+  Loader2,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { sparkMode } from '@/ai/flows/spark-mode-flow';
 
 interface NotePanelProps {
   note: Note;
@@ -58,6 +61,7 @@ export function NotePanel({ note, onUpdate, onClose, onSplit, onFocus }: NotePan
   const [isSummarizerOpen, setIsSummarizerOpen] = useState(false);
   const [isInfoOpen, setIsInfoOpen] = useState(false);
   const [isInteracting, setIsInteracting] = useState(false);
+  const [isSparking, setIsSparking] = useState(false);
   const { toast } = useToast();
 
   const panelRef = useRef<HTMLDivElement>(null);
@@ -131,6 +135,37 @@ export function NotePanel({ note, onUpdate, onClose, onSplit, onFocus }: NotePan
 
   const handleSummarize = (summary: string) => {
     onUpdate({ id: note.id, content: `${note.content}\n\n--- Summary ---\n${summary}` });
+  };
+  
+  const handleSparkMode = async () => {
+    if (!note.content.trim()) {
+      toast({
+        title: 'Note is empty',
+        description: 'Write something in your note to get creative sparks.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    setIsSparking(true);
+    try {
+      const ideas = await sparkMode({ noteContent: note.content });
+      const formattedIdeas = ideas.map(idea => `- ${idea}`).join('\n');
+      const newContent = `${note.content}\n\n--- Sparks ---\n${formattedIdeas}`;
+      onUpdate({ id: note.id, content: newContent });
+      toast({
+        title: 'Sparks added!',
+        description: 'Creative ideas have been added to your note.',
+      });
+    } catch (error) {
+      console.error('Spark Mode failed', error);
+      toast({
+        title: 'Spark Mode Failed',
+        description: (error as Error).message || 'Could not generate ideas.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSparking(false);
+    }
   };
   
   const toggleDock = () => onUpdate({ id: note.id, isDocked: !note.isDocked, isMaximized: false });
@@ -216,6 +251,10 @@ export function NotePanel({ note, onUpdate, onClose, onSplit, onFocus }: NotePan
                             <MenubarTrigger>Edit</MenubarTrigger>
                             <MenubarContent>
                                 <MenubarItem onClick={() => setIsSummarizerOpen(true)}><Link className="mr-2 h-4 w-4" /> Summarize...</MenubarItem>
+                                <MenubarItem onClick={handleSparkMode} disabled={isSparking}>
+                                  {isSparking ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Lightbulb className="mr-2 h-4 w-4" />}
+                                  Spark Ideas
+                                </MenubarItem>
                             </MenubarContent>
                         </MenubarMenu>
                          <MenubarMenu>
