@@ -182,7 +182,7 @@ export function NotePanel({ note, onUpdate, onClose, onSplit, onFocus }: NotePan
         className={cn(
           "absolute flex flex-col",
           !isInteracting && "transition-all duration-200 ease-in-out",
-          note.isTransparent && !note.isDocked && "opacity-50 hover:opacity-100 focus-within:opacity-100",
+          note.isTransparent && !note.isDocked && "opacity-30 hover:opacity-100 focus-within:opacity-100",
           note.isDocked && "opacity-20 hover:opacity-100 focus-within:opacity-100"
         )}
         onMouseDown={onFocus}
@@ -264,7 +264,7 @@ export function NotePanel({ note, onUpdate, onClose, onSplit, onFocus }: NotePan
                 value={note.content}
                 onChange={e => onUpdate({ id: note.id, content: e.target.value })}
                 onAnimationEnd={(e) => {
-                  if (e.animationName === 'dissolve' && note.isDissolved) {
+                  if (e.animationName === 'neural-dissolve' && note.isDissolved) {
                     onUpdate({ id: note.id, content: '' });
                   }
                 }}
