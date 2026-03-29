@@ -39,8 +39,9 @@ export function SummarizerDialog({ open, onOpenChange, onSummarize }: Summarizer
 
     setIsLoading(true);
     try {
-      const isUrl = content.trim().startsWith('http://') || content.trim().startsWith('https://');
-      const input = isUrl ? { url: content.trim() } : { content: content.trim() };
+      const trimmedContent = content.trim();
+      const isUrl = trimmedContent.startsWith('http://') || trimmedContent.startsWith('https://');
+      const input = isUrl ? { url: trimmedContent.split('\n')[0].trim() } : { content: trimmedContent };
       const summary = await summarizeExternalContent(input);
       onSummarize(summary);
       onOpenChange(false);
