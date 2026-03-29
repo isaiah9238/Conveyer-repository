@@ -114,11 +114,13 @@ export default function Home() {
       ))}
 
       {notes.length === 0 && (
-         <div className="absolute inset-0 flex items-center justify-center">
-            <div className="text-center p-8 bg-card/80 backdrop-blur-sm rounded-lg shadow-2xl border">
-              <h1 className="text-4xl font-bold font-headline text-foreground">Welcome to Conveyer</h1>
-              <p className="text-muted-foreground mt-2">A fluid, always-on-top information conveyor.</p>
-              <Button onClick={handleCreateFirstNote} size="lg" className="mt-6">
+         <div className="absolute inset-0 flex items-center justify-center p-4">
+            <div className="text-center p-8 bg-card/90 backdrop-blur-lg rounded-lg shadow-xl border animate-in fade-in-50 slide-in-from-bottom-10 duration-500">
+              <h1 className="text-5xl font-headline text-foreground">Conveyer</h1>
+              <p className="text-muted-foreground mt-3 max-w-md mx-auto">
+                Your fluid thought-space. Capture ideas, make connections, and let your thoughts flow.
+              </p>
+              <Button onClick={handleCreateFirstNote} size="lg" className="mt-8">
                  <FilePlus2 className="mr-2 h-5 w-5" /> Create Your First Note
               </Button>
             </div>
