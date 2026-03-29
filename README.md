@@ -1,5 +1,5 @@
-# Firebase Studio
+# Conveyer
 
-This is a NextJS starter in Firebase Studio.
+A fluid information conveyor.
 
-To get started, take a look at src/app/page.tsx.
+To get started, run `npm run dev` and open http://localhost:9002.
