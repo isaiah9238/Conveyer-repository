@@ -228,7 +228,7 @@ export function NotePanel({ note, onUpdate, onClose, onSplit, onFocus }: NotePan
                                 </MenubarItem>
                                 <MenubarItem onClick={toggleMaximize}>
                                   {note.isMaximized ? <Shrink className="mr-2 h-4 w-4" /> : <Expand className="mr-2 h-4 w-4" />}
-                                  {note.isMaximized ? 'Restore' : 'Maximize'}
+                                  {note.isMaximized ? 'Restore' : 'Fill Screen'}
                                 </MenubarItem>
                             </MenubarContent>
                         </MenubarMenu>
