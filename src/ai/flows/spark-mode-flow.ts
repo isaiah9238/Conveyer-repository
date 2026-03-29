@@ -50,10 +50,18 @@ const sparkModeFlow = ai.defineFlow(
     outputSchema: SparkModeOutputSchema,
   },
   async input => {
-    const { output } = await prompt(input);
-    if (!output) {
-      throw new Error("The creative muse is quiet right now. Could not generate ideas.");
+    try {
+      const { output } = await prompt(input);
+      if (!output) {
+        throw new Error("The creative muse is quiet right now. Could not generate ideas.");
+      }
+      return output;
+    } catch (error: any) {
+      if (error.message?.includes('API key not valid')) {
+        throw new Error('Your Gemini API key is missing or invalid. Please create a .env file in the root of the project and add your key, like this: GEMINI_API_KEY="YOUR_API_KEY_HERE"');
+      }
+      // Re-throw other errors
+      throw error;
     }
-    return output;
   }
 );

@@ -116,11 +116,19 @@ const summarizeExternalContentFlow = ai.defineFlow(
       throw new Error("No meaningful content was found to summarize.");
     }
 
-    const { output } = await summarizePrompt({ textToSummarize: textContent });
-    if (!output) {
-        throw new Error("Failed to generate summary from the content.");
+    try {
+      const { output } = await summarizePrompt({ textToSummarize: textContent });
+      if (!output) {
+          throw new Error("Failed to generate summary from the content.");
+      }
+      return output;
+    } catch (error: any) {
+      if (error.message?.includes('API key not valid')) {
+        throw new Error('Your Gemini API key is missing or invalid. Please create a .env file in the root of the project and add your key, like this: GEMINI_API_KEY="YOUR_API_KEY_HERE"');
+      }
+      // Re-throw other errors
+      throw error;
     }
-    return output;
   }
 );
 

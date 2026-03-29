@@ -41,7 +41,18 @@ const summarizeNoteFlow = ai.defineFlow(
     outputSchema: SummarizeNoteOutputSchema,
   },
   async input => {
-    const {output} = await prompt(input);
-    return output!;
+    try {
+      const {output} = await prompt(input);
+      if (!output) {
+        throw new Error("Failed to generate summary from the note content.");
+      }
+      return output;
+    } catch (error: any) {
+      if (error.message?.includes('API key not valid')) {
+        throw new Error('Your Gemini API key is missing or invalid. Please create a .env file in the root of the project and add your key, like this: GEMINI_API_KEY="YOUR_API_KEY_HERE"');
+      }
+      // Re-throw other errors
+      throw error;
+    }
   }
 );
