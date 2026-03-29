@@ -167,7 +167,7 @@ export function NotePanel({ note, onUpdate, onClose, onSplit, onFocus }: NotePan
   };
 
   if (note.isMaximized) {
-    Object.assign(panelStyle, { top: 0, left: 0, width: '100vw', height: '100vh', zIndex: note.zIndex, transform: 'none' });
+    Object.assign(panelStyle, { top: 0, left: 0, width: '100vw', height: '100vh', zIndex: note.zIndex, transform: 'none', borderRadius: 0 });
   } else if (note.isDocked) {
     Object.assign(panelStyle, { top: note.y, left: note.x, width: DOCKED_SIZE, height: DOCKED_SIZE, zIndex: note.zIndex });
   } else {
@@ -180,7 +180,7 @@ export function NotePanel({ note, onUpdate, onClose, onSplit, onFocus }: NotePan
         ref={panelRef}
         style={panelStyle}
         className={cn(
-          "absolute flex flex-col",
+          "absolute flex flex-col rounded-lg",
           !isInteracting && "transition-all duration-200 ease-in-out",
           note.isTransparent && !note.isDocked && "opacity-30 hover:opacity-100 focus-within:opacity-100",
           note.isDocked && "opacity-20 hover:opacity-100 focus-within:opacity-100"
@@ -258,7 +258,7 @@ export function NotePanel({ note, onUpdate, onClose, onSplit, onFocus }: NotePan
               <Textarea
                 placeholder="Start typing..."
                 className={cn(
-                  'w-full h-full resize-none border-none focus-visible:ring-0 focus-visible:ring-offset-0 p-4 select-text',
+                  'notebook-lines w-full h-full resize-none border-none focus-visible:ring-0 focus-visible:ring-offset-0 p-4 select-text',
                   note.isDissolved && note.content ? 'animate-dissolve' : ''
                 )}
                 value={note.content}
