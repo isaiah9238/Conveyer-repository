@@ -36,7 +36,6 @@ import {
   Dock,
   Expand,
   Shrink,
-  Maximize,
   Eye,
   EyeOff,
   GripVertical
@@ -58,6 +57,7 @@ const DOCKED_SIZE = 120;
 export function NotePanel({ note, onUpdate, onClose, onSplit, onFocus }: NotePanelProps) {
   const [isSummarizerOpen, setIsSummarizerOpen] = useState(false);
   const [isInfoOpen, setIsInfoOpen] = useState(false);
+  const [isInteracting, setIsInteracting] = useState(false);
   const { toast } = useToast();
 
   const panelRef = useRef<HTMLDivElement>(null);
@@ -70,28 +70,7 @@ export function NotePanel({ note, onUpdate, onClose, onSplit, onFocus }: NotePan
     startLeft: number;
     startTop: number;
   } | null>(null);
-
-  const handleInteractionStart = useCallback((e: React.MouseEvent<HTMLDivElement>, type: 'drag' | 'resize') => {
-    e.preventDefault();
-    e.stopPropagation();
-    onFocus();
-
-    if (note.isDocked || note.isMaximized) return;
-
-    interactionRef.current = {
-      type,
-      startX: e.clientX,
-      startY: e.clientY,
-      startW: panelRef.current?.offsetWidth || 0,
-      startH: panelRef.current?.offsetHeight || 0,
-      startLeft: panelRef.current?.offsetLeft || 0,
-      startTop: panelRef.current?.offsetTop || 0,
-    };
-
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
-  }, [note.isDocked, note.isMaximized, onFocus]);
-
+  
   const handleMouseMove = useCallback((e: MouseEvent) => {
     if (!interactionRef.current) return;
     const { type, startX, startY, startW, startH, startLeft, startTop } = interactionRef.current;
@@ -106,12 +85,37 @@ export function NotePanel({ note, onUpdate, onClose, onSplit, onFocus }: NotePan
       onUpdate({ id: note.id, width: newW, height: newH });
     }
   }, [note.id, onUpdate]);
-
+  
   const handleMouseUp = useCallback(() => {
     interactionRef.current = null;
+    setIsInteracting(false);
     document.removeEventListener('mousemove', handleMouseMove);
     document.removeEventListener('mouseup', handleMouseUp);
   }, [handleMouseMove]);
+
+  const handleInteractionStart = useCallback((e: React.MouseEvent<HTMLDivElement>, type: 'drag' | 'resize') => {
+    e.preventDefault();
+    e.stopPropagation();
+    onFocus();
+
+    if (note.isDocked || note.isMaximized) return;
+
+    setIsInteracting(true);
+
+    interactionRef.current = {
+      type,
+      startX: e.clientX,
+      startY: e.clientY,
+      startW: panelRef.current?.offsetWidth || 0,
+      startH: panelRef.current?.offsetHeight || 0,
+      startLeft: panelRef.current?.offsetLeft || 0,
+      startTop: panelRef.current?.offsetTop || 0,
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  }, [note.isDocked, note.isMaximized, onFocus, handleMouseMove, handleMouseUp]);
+
 
   useEffect(() => {
     return () => {
@@ -176,13 +180,17 @@ export function NotePanel({ note, onUpdate, onClose, onSplit, onFocus }: NotePan
         ref={panelRef}
         style={panelStyle}
         className={cn(
-          "absolute flex flex-col transition-all duration-200 ease-in-out",
+          "absolute flex flex-col",
+          !isInteracting && "transition-all duration-200 ease-in-out",
           note.isTransparent && !note.isDocked && "opacity-50 hover:opacity-100 focus-within:opacity-100",
           note.isDocked && "opacity-20 hover:opacity-100 focus-within:opacity-100"
         )}
         onMouseDown={onFocus}
       >
-        <Card className="flex flex-col w-full h-full shadow-2xl border-2 border-primary/10 overflow-hidden">
+        <Card className={cn(
+            "flex flex-col w-full h-full shadow-2xl border border-primary/10 overflow-hidden",
+            note.isMaximized && "rounded-none border-none shadow-none"
+          )}>
           <CardHeader
             className="p-0 flex-shrink-0 bg-card/80 backdrop-blur-sm"
             onMouseDown={(e) => handleInteractionStart(e, 'drag')}
@@ -223,7 +231,7 @@ export function NotePanel({ note, onUpdate, onClose, onSplit, onFocus }: NotePan
                                 </MenubarItem>
                                 <MenubarSeparator />
                                 <MenubarItem onClick={toggleDock}>
-                                  {note.isDocked ? <Maximize className="mr-2 h-4 w-4" /> : <Dock className="mr-2 h-4 w-4" />}
+                                  {note.isDocked ? <Expand className="mr-2 h-4 w-4" /> : <Dock className="mr-2 h-4 w-4" />}
                                   {note.isDocked ? 'Undock' : 'Dock'}
                                 </MenubarItem>
                                 <MenubarItem onClick={toggleMaximize}>
