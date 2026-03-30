@@ -75,58 +75,71 @@ export function NotePanel({ note, onUpdate, onClose, onSplit, onFocus }: NotePan
     startTop: number;
   } | null>(null);
   
-  const handleMouseMove = useCallback((e: MouseEvent) => {
+  const handleMove = useCallback((e: MouseEvent | TouchEvent) => {
     if (!interactionRef.current) return;
+    
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+
     const { type, startX, startY, startW, startH, startLeft, startTop } = interactionRef.current;
     
     if (type === 'drag') {
-      const newX = startLeft + e.clientX - startX;
-      const newY = startTop + e.clientY - startY;
+      const newX = startLeft + clientX - startX;
+      const newY = startTop + clientY - startY;
       onUpdate({ id: note.id, x: newX, y: newY });
     } else if (type === 'resize') {
-      const newW = Math.max(MIN_WIDTH, startW + e.clientX - startX);
-      const newH = Math.max(MIN_HEIGHT, startH + e.clientY - startY);
+      const newW = Math.max(MIN_WIDTH, startW + clientX - startX);
+      const newH = Math.max(MIN_HEIGHT, startH + clientY - startY);
       onUpdate({ id: note.id, width: newW, height: newH });
     }
   }, [note.id, onUpdate]);
   
-  const handleMouseUp = useCallback(() => {
+  const handleInteractionEnd = useCallback(() => {
     interactionRef.current = null;
     setIsInteracting(false);
-    document.removeEventListener('mousemove', handleMouseMove);
-    document.removeEventListener('mouseup', handleMouseUp);
-  }, [handleMouseMove]);
+    document.removeEventListener('mousemove', handleMove);
+    document.removeEventListener('mouseup', handleInteractionEnd);
+    document.removeEventListener('touchmove', handleMove);
+    document.removeEventListener('touchend', handleInteractionEnd);
+  }, [handleMove]);
 
-  const handleInteractionStart = useCallback((e: React.MouseEvent<HTMLDivElement>, type: 'drag' | 'resize') => {
-    e.preventDefault();
+  const handleInteractionStart = useCallback((e: React.MouseEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>, type: 'drag' | 'resize') => {
+    // Stop propagation to prevent other event handlers from firing.
     e.stopPropagation();
     onFocus();
 
     if (note.isDocked || note.isMaximized) return;
 
     setIsInteracting(true);
+    
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
 
     interactionRef.current = {
       type,
-      startX: e.clientX,
-      startY: e.clientY,
+      startX: clientX,
+      startY: clientY,
       startW: panelRef.current?.offsetWidth || 0,
       startH: panelRef.current?.offsetHeight || 0,
       startLeft: panelRef.current?.offsetLeft || 0,
       startTop: panelRef.current?.offsetTop || 0,
     };
 
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
-  }, [note.isDocked, note.isMaximized, onFocus, handleMouseMove, handleMouseUp]);
+    document.addEventListener('mousemove', handleMove, { passive: true });
+    document.addEventListener('mouseup', handleInteractionEnd);
+    document.addEventListener('touchmove', handleMove, { passive: true });
+    document.addEventListener('touchend', handleInteractionEnd);
+  }, [note.isDocked, note.isMaximized, onFocus, handleMove, handleInteractionEnd]);
 
 
   useEffect(() => {
     return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener('mousemove', handleMove);
+      document.removeEventListener('mouseup', handleInteractionEnd);
+      document.removeEventListener('touchmove', handleMove);
+      document.removeEventListener('touchend', handleInteractionEnd);
     };
-  }, [handleMouseMove, handleMouseUp]);
+  }, [handleMove, handleInteractionEnd]);
   
   const handleCopy = () => {
     navigator.clipboard.writeText(note.content);
@@ -199,6 +212,7 @@ export function NotePanel({ note, onUpdate, onClose, onSplit, onFocus }: NotePan
   const panelStyle: React.CSSProperties = {
     '--min-width': `${MIN_WIDTH}px`,
     '--min-height': `${MIN_HEIGHT}px`,
+    touchAction: 'none',
   };
 
   if (note.isMaximized) {
@@ -229,6 +243,7 @@ export function NotePanel({ note, onUpdate, onClose, onSplit, onFocus }: NotePan
           <CardHeader
             className="p-0 flex-shrink-0 bg-card/80 backdrop-blur-sm"
             onMouseDown={(e) => handleInteractionStart(e, 'drag')}
+            onTouchStart={(e) => handleInteractionStart(e, 'drag')}
           >
             <div className={cn("flex items-center justify-between h-11 px-1", note.isDocked ? 'cursor-grab active:cursor-grabbing' : 'cursor-default')}>
                 {note.isDocked ? (
@@ -300,6 +315,7 @@ export function NotePanel({ note, onUpdate, onClose, onSplit, onFocus }: NotePan
                   'notebook-lines w-full h-full resize-none border-none focus-visible:ring-0 focus-visible:ring-offset-0 p-4 select-text',
                   note.isDissolved && note.content ? 'animate-dissolve' : ''
                 )}
+                style={{ touchAction: 'auto' }}
                 value={note.content}
                 onChange={e => onUpdate({ id: note.id, content: e.target.value })}
                 onAnimationEnd={(e) => {
@@ -315,6 +331,7 @@ export function NotePanel({ note, onUpdate, onClose, onSplit, onFocus }: NotePan
               <div
                 className="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize text-muted-foreground/50 hover:text-muted-foreground"
                 onMouseDown={(e) => handleInteractionStart(e, 'resize')}
+                onTouchStart={(e) => handleInteractionStart(e, 'resize')}
               >
                   <svg width="100%" height="100%" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M16 0V16H0L16 0Z" fill="currentColor"/>
