@@ -44,6 +44,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { sparkMode } from '@/ai/flows/spark-mode-flow';
+import { Input } from '@/components/ui/input';
 
 interface NotePanelProps {
   note: Note;
@@ -62,6 +63,7 @@ export function NotePanel({ note, onUpdate, onClose, onSplit, onFocus }: NotePan
   const [isInfoOpen, setIsInfoOpen] = useState(false);
   const [isInteracting, setIsInteracting] = useState(false);
   const [isSparking, setIsSparking] = useState(false);
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
   const { toast } = useToast();
 
   const panelRef = useRef<HTMLDivElement>(null);
@@ -104,6 +106,10 @@ export function NotePanel({ note, onUpdate, onClose, onSplit, onFocus }: NotePan
   }, [handleMove]);
 
   const handleInteractionStart = useCallback((e: React.MouseEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>, type: 'drag' | 'resize') => {
+    // Prevent drag from starting if clicking on a menu trigger button or inside a menu content
+    if ((e.target as HTMLElement).closest('[role="menuitem"], [role="menu"]')) {
+      return;
+    }
     // Stop propagation to prevent other event handlers from firing.
     e.stopPropagation();
     onFocus();
@@ -255,9 +261,32 @@ export function NotePanel({ note, onUpdate, onClose, onSplit, onFocus }: NotePan
                         <span className='font-bold text-lg'>C{noteNumber}</span>
                     </div>
                 ) : (
+                  <div className="flex items-center">
+                    {isEditingTitle ? (
+                       <Input
+                          value={note.title}
+                          onChange={(e) => onUpdate({ id: note.id, title: e.target.value })}
+                          onBlur={() => setIsEditingTitle(false)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === 'Escape') {
+                              setIsEditingTitle(false);
+                              e.currentTarget.blur();
+                            }
+                          }}
+                          autoFocus
+                          className="h-8 w-36 font-semibold text-lg px-3 py-1.5 border-0 border-b-2 border-dashed border-primary/50 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 rounded-none"
+                       />
+                    ) : (
+                      <span
+                        onDoubleClick={() => setIsEditingTitle(true)}
+                        className="px-3 py-1.5 font-semibold text-lg rounded-sm cursor-pointer"
+                      >
+                        {note.title || 'Conveyer'}
+                      </span>
+                    )}
                     <Menubar className="border-none bg-transparent shadow-none h-auto p-0">
                         <MenubarMenu>
-                            <MenubarTrigger className="font-semibold text-lg">{note.title || 'Conveyer'}</MenubarTrigger>
+                            <MenubarTrigger>File</MenubarTrigger>
                             <MenubarContent>
                                 <MenubarItem onClick={onSplit}><FilePlus2 className="mr-2 h-4 w-4" /> Split Page</MenubarItem>
                                 <MenubarItem onClick={handleCopy}>Copy Content</MenubarItem>
@@ -304,6 +333,7 @@ export function NotePanel({ note, onUpdate, onClose, onSplit, onFocus }: NotePan
                             </MenubarContent>
                         </MenubarMenu>
                     </Menubar>
+                    </div>
                 )}
                 <div className="flex-grow h-full" style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}></div>
                 <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onClose}><X className="h-4 w-4" /></Button>
