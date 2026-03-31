@@ -78,7 +78,7 @@ export function NotePanel({ note, onUpdate, onClose, onSplit, onFocus }: NotePan
   } | null>(null);
   
   const handleMove = useCallback((e: MouseEvent | TouchEvent) => {
-    if (!interactionRef.current) return;
+    if (!interactionRef.current || !panelRef.current) return;
     
     const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
     const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
@@ -86,8 +86,17 @@ export function NotePanel({ note, onUpdate, onClose, onSplit, onFocus }: NotePan
     const { type, startX, startY, startW, startH, startLeft, startTop } = interactionRef.current;
     
     if (type === 'drag') {
-      const newX = startLeft + clientX - startX;
-      const newY = startTop + clientY - startY;
+      let newX = startLeft + clientX - startX;
+      let newY = startTop + clientY - startY;
+
+      // Add screen boundaries to prevent dragging off-screen
+      const panelWidth = panelRef.current.offsetWidth;
+      const panelHeight = panelRef.current.offsetHeight;
+      const { innerWidth, innerHeight } = window;
+
+      newX = Math.max(0, Math.min(newX, innerWidth - panelWidth));
+      newY = Math.max(0, Math.min(newY, innerHeight - panelHeight));
+
       onUpdate({ id: note.id, x: newX, y: newY });
     } else if (type === 'resize') {
       const newW = Math.max(MIN_WIDTH, startW + clientX - startX);
@@ -106,12 +115,13 @@ export function NotePanel({ note, onUpdate, onClose, onSplit, onFocus }: NotePan
   }, [handleMove]);
 
   const handleInteractionStart = useCallback((e: React.MouseEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>, type: 'drag' | 'resize') => {
-    // Prevent drag from starting if clicking on a menu trigger button or inside a menu content
-    if ((e.target as HTMLElement).closest('[role="menuitem"], [role="menu"]')) {
+    const target = e.target as HTMLElement;
+    // Prevent drag if the target is an input, button, or inside a menu/menubar.
+    // This allows menus and buttons in the header to be clickable.
+    if (target.closest('input, button, [role="menu"], [role="menubar"]')) {
       return;
     }
-    // Stop propagation to prevent other event handlers from firing.
-    e.stopPropagation();
+    
     onFocus();
 
     if (note.isDocked || note.isMaximized) return;
