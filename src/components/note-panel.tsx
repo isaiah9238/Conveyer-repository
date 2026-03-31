@@ -79,6 +79,11 @@ export function NotePanel({ note, onUpdate, onClose, onSplit, onFocus }: NotePan
   
   const handleMove = useCallback((e: MouseEvent | TouchEvent) => {
     if (!interactionRef.current || !panelRef.current) return;
+
+    // Prevent default browser actions like text selection during drag
+    if (e.cancelable) {
+      e.preventDefault();
+    }
     
     const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
     const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
@@ -116,12 +121,16 @@ export function NotePanel({ note, onUpdate, onClose, onSplit, onFocus }: NotePan
 
   const handleInteractionStart = useCallback((e: React.MouseEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>, type: 'drag' | 'resize') => {
     const target = e.target as HTMLElement;
-    // Prevent drag if the target is an input, button, or inside a menu/menubar.
     // This allows menus and buttons in the header to be clickable.
-    if (target.closest('input, button, [role="menu"], [role="menubar"]')) {
+    if (type === 'drag' && target.closest('button, [role="menubar"]')) {
       return;
     }
     
+    // Prevent drag from starting on resize handle
+    if (type === 'drag' && target.closest('.resize-handle')) {
+        return;
+    }
+
     onFocus();
 
     if (note.isDocked || note.isMaximized) return;
@@ -141,9 +150,9 @@ export function NotePanel({ note, onUpdate, onClose, onSplit, onFocus }: NotePan
       startTop: panelRef.current?.offsetTop || 0,
     };
 
-    document.addEventListener('mousemove', handleMove, { passive: true });
+    document.addEventListener('mousemove', handleMove);
     document.addEventListener('mouseup', handleInteractionEnd);
-    document.addEventListener('touchmove', handleMove, { passive: true });
+    document.addEventListener('touchmove', handleMove);
     document.addEventListener('touchend', handleInteractionEnd);
   }, [note.isDocked, note.isMaximized, onFocus, handleMove, handleInteractionEnd]);
 
@@ -372,7 +381,7 @@ export function NotePanel({ note, onUpdate, onClose, onSplit, onFocus }: NotePan
 
           {!note.isDocked && !note.isMaximized && (
               <div
-                className="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize text-muted-foreground/50 hover:text-muted-foreground"
+                className="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize text-muted-foreground/50 hover:text-muted-foreground resize-handle"
                 onMouseDown={(e) => handleInteractionStart(e, 'resize')}
                 onTouchStart={(e) => handleInteractionStart(e, 'resize')}
               >
