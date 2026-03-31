@@ -62,7 +62,7 @@ export default function Home() {
 
   const addNote = useCallback((baseNote?: Note) => {
     const maxNoteNumber = notes.reduce((max, note) => {
-        const num = parseInt(note.title.match(/\d+$/)?.[0] || '0', 10);
+        const num = parseInt(note.title?.match(/\d+$/)?.[0] || '0', 10);
         return Math.max(max, num);
     }, 0);
 

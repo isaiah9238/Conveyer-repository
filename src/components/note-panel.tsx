@@ -223,7 +223,7 @@ export function NotePanel({ note, onUpdate, onClose, onSplit, onFocus }: NotePan
     Object.assign(panelStyle, { top: note.y, left: note.x, width: note.width, height: note.height, zIndex: note.zIndex });
   }
 
-  const noteNumber = note.title.match(/\d+$/)?.[0];
+  const noteNumber = note.title?.match(/\d+$/)?.[0];
 
   return (
     <>
@@ -257,7 +257,7 @@ export function NotePanel({ note, onUpdate, onClose, onSplit, onFocus }: NotePan
                 ) : (
                     <Menubar className="border-none bg-transparent shadow-none h-auto p-0">
                         <MenubarMenu>
-                            <MenubarTrigger className="font-semibold text-lg">{note.title}</MenubarTrigger>
+                            <MenubarTrigger className="font-semibold text-lg">{note.title || 'Conveyer'}</MenubarTrigger>
                             <MenubarContent>
                                 <MenubarItem onClick={onSplit}><FilePlus2 className="mr-2 h-4 w-4" /> Split Page</MenubarItem>
                                 <MenubarItem onClick={handleCopy}>Copy Content</MenubarItem>
