@@ -11,6 +11,7 @@ import { FilePlus2 } from 'lucide-react';
 
 const initialNote: Note = {
   id: `note-${Date.now()}`,
+  title: 'Conveyer1',
   content: `Welcome to Conveyer!
 
 - Drag to move this window.
@@ -60,9 +61,15 @@ export default function Home() {
   }, [setNotes]);
 
   const addNote = useCallback((baseNote?: Note) => {
+    const maxNoteNumber = notes.reduce((max, note) => {
+        const num = parseInt(note.title.match(/\d+$/)?.[0] || '0', 10);
+        return Math.max(max, num);
+    }, 0);
+
     const maxZIndex = Math.max(0, ...notes.map(n => n.zIndex));
     const newNote: Note = {
       id: `note-${Date.now()}`,
+      title: `Conveyer${maxNoteNumber + 1}`,
       content: 'New Note',
       x: (baseNote?.x ?? 150) + 30,
       y: (baseNote?.y ?? 150) + 30,

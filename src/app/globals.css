@@ -59,17 +59,6 @@
 }
 
 @layer utilities {
-  .notebook-lines {
-    background-image: repeating-linear-gradient(
-      transparent,
-      transparent 29px,
-      hsl(var(--border)) 29px,
-      hsl(var(--border)) 30px
-    );
-    line-height: 30px;
-    background-attachment: local;
-  }
-
   @keyframes neural-dissolve {
     0% { opacity: 1; filter: blur(0px) grayscale(0%); transform: scale(1); }
     50% { opacity: 0.5; filter: blur(4px) grayscale(50%); transform: scale(1.05); }

@@ -223,6 +223,8 @@ export function NotePanel({ note, onUpdate, onClose, onSplit, onFocus }: NotePan
     Object.assign(panelStyle, { top: note.y, left: note.x, width: note.width, height: note.height, zIndex: note.zIndex });
   }
 
+  const noteNumber = note.title.match(/\d+$/)?.[0];
+
   return (
     <>
       <div
@@ -244,17 +246,18 @@ export function NotePanel({ note, onUpdate, onClose, onSplit, onFocus }: NotePan
             className="p-0 flex-shrink-0 bg-card/80 backdrop-blur-sm"
             onMouseDown={(e) => handleInteractionStart(e, 'drag')}
             onTouchStart={(e) => handleInteractionStart(e, 'drag')}
+            onDoubleClick={note.isDocked ? toggleDock : undefined}
           >
             <div className={cn("flex items-center justify-between h-11 px-1", note.isDocked ? 'cursor-grab active:cursor-grabbing' : 'cursor-default')}>
                 {note.isDocked ? (
                     <div className='flex items-center gap-2 w-full h-full cursor-grab active:cursor-grabbing px-2'>
                         <GripVertical className='text-muted-foreground' />
-                        <span className='font-bold text-lg'>C</span>
+                        <span className='font-bold text-lg'>C{noteNumber}</span>
                     </div>
                 ) : (
                     <Menubar className="border-none bg-transparent shadow-none h-auto p-0">
                         <MenubarMenu>
-                            <MenubarTrigger className="font-semibold text-lg">Conveyer</MenubarTrigger>
+                            <MenubarTrigger className="font-semibold text-lg">{note.title}</MenubarTrigger>
                             <MenubarContent>
                                 <MenubarItem onClick={onSplit}><FilePlus2 className="mr-2 h-4 w-4" /> Split Page</MenubarItem>
                                 <MenubarItem onClick={handleCopy}>Copy Content</MenubarItem>
@@ -312,7 +315,7 @@ export function NotePanel({ note, onUpdate, onClose, onSplit, onFocus }: NotePan
               <Textarea
                 placeholder="Start typing..."
                 className={cn(
-                  'notebook-lines w-full h-full resize-none border-none focus-visible:ring-0 focus-visible:ring-offset-0 p-4 select-text',
+                  'w-full h-full resize-none border-none focus-visible:ring-0 focus-visible:ring-offset-0 p-4 select-text',
                   note.isDissolved && note.content ? 'animate-dissolve' : ''
                 )}
                 style={{ touchAction: 'auto' }}
