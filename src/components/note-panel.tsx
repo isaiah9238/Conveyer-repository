@@ -364,8 +364,8 @@ export function NotePanel({ note, onUpdate, onClose, onSplit, onFocus }: NotePan
               <Textarea
                 placeholder="Start typing..."
                 className={cn(
-                  'w-full h-full resize-none border-none focus-visible:ring-0 focus-visible:ring-offset-0 p-4 select-text',
-                  'font-code leading-6 bg-repeat-y bg-[linear-gradient(theme(colors.border)_1px,transparent_1px)] bg-[length:100%_1.5rem]',
+                  'w-full h-full resize-none border-none focus-visible:ring-0 focus-visible:ring-offset-0 p-8 select-text',
+                  'font-code leading-relaxed bg-local bg-repeat-y bg-[linear-gradient(theme(colors.border)_1px,transparent_1px)] bg-[length:100%_1lh]',
                   note.isDissolved && note.content ? 'animate-dissolve' : ''
                 )}
                 style={{ touchAction: 'auto' }}
