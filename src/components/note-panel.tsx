@@ -41,10 +41,13 @@ import {
   GripVertical,
   Lightbulb,
   Loader2,
+  Moon,
+  Sun,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { sparkMode } from '@/ai/flows/spark-mode-flow';
 import { Input } from '@/components/ui/input';
+import { useTheme } from '@/components/theme-provider';
 
 interface NotePanelProps {
   note: Note;
@@ -65,6 +68,7 @@ export function NotePanel({ note, onUpdate, onClose, onSplit, onFocus }: NotePan
   const [isSparking, setIsSparking] = useState(false);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const { toast } = useToast();
+  const { theme, toggleTheme } = useTheme();
 
   const panelRef = useRef<HTMLDivElement>(null);
   const interactionRef = useRef<{
@@ -80,7 +84,6 @@ export function NotePanel({ note, onUpdate, onClose, onSplit, onFocus }: NotePan
   const handleMove = useCallback((e: MouseEvent | TouchEvent) => {
     if (!interactionRef.current || !panelRef.current) return;
 
-    // Prevent default browser actions like text selection during drag
     if (e.cancelable) {
       e.preventDefault();
     }
@@ -94,7 +97,6 @@ export function NotePanel({ note, onUpdate, onClose, onSplit, onFocus }: NotePan
       let newX = startLeft + clientX - startX;
       let newY = startTop + clientY - startY;
 
-      // Add screen boundaries to prevent dragging off-screen
       const panelWidth = panelRef.current.offsetWidth;
       const panelHeight = panelRef.current.offsetHeight;
       const { innerWidth, innerHeight } = window;
@@ -122,12 +124,10 @@ export function NotePanel({ note, onUpdate, onClose, onSplit, onFocus }: NotePan
 
   const handleInteractionStart = useCallback((e: React.MouseEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>, type: 'drag' | 'resize') => {
     const target = e.target as HTMLElement;
-    // This allows menus and buttons in the header to be clickable.
     if (type === 'drag' && target.closest('button, [role="menubar"]')) {
       return;
     }
     
-    // Prevent drag from starting on resize handle
     if (type === 'drag' && target.closest('.resize-handle')) {
         return;
     }
@@ -328,6 +328,11 @@ export function NotePanel({ note, onUpdate, onClose, onSplit, onFocus }: NotePan
                          <MenubarMenu>
                             <MenubarTrigger>View</MenubarTrigger>
                             <MenubarContent>
+                                <MenubarItem onClick={toggleTheme}>
+                                  {theme === 'dark' ? <Sun className="mr-2 h-4 w-4" /> : <Moon className="mr-2 h-4 w-4" />}
+                                  Toggle Theme
+                                </MenubarItem>
+                                <MenubarSeparator />
                                 <MenubarItem onClick={toggleDissolve}>
                                   <Sparkles className="mr-2 h-4 w-4" />
                                   {note.isDissolved ? 'Restore Text' : 'Dissolve Text'}
@@ -367,10 +372,9 @@ export function NotePanel({ note, onUpdate, onClose, onSplit, onFocus }: NotePan
                 placeholder="Start typing..."
                 className={cn(
                   'w-full h-full resize-none border-none focus-visible:ring-0 focus-visible:ring-offset-0 p-8 select-text',
-                  'font-code leading-relaxed bg-local bg-[linear-gradient(rgba(0,0,0,0.1)_1px,transparent_1px)] bg-[length:100%_1lh]',
-                  note.isDissolved && note.content ? 'animate-dissolve' : ''
+                  'font-code leading-relaxed bg-local bg-no-repeat bg-[linear-gradient(rgba(0,0,0,0.1)_1px,transparent_1px)] dark:bg-[linear-gradient(rgba(255,255,255,0.1)_1px,transparent_1px)] bg-[length:100%_1.6rem]'
                 )}
-                style={{ backgroundAttachment: 'local', touchAction: 'auto' }}
+                style={{ backgroundAttachment: 'local', touchAction: 'auto', lineHeight: '1.6' }}
                 value={note.content}
                 onChange={e => onUpdate({ id: note.id, content: e.target.value })}
                 onAnimationEnd={(e) => {
