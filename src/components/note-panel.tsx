@@ -113,6 +113,7 @@ export function NotePanel({ note, onUpdate, onClose, onSplit, onFocus }: NotePan
   const handleInteractionEnd = useCallback(() => {
     interactionRef.current = null;
     setIsInteracting(false);
+    document.body.style.userSelect = '';
     document.removeEventListener('mousemove', handleMove);
     document.removeEventListener('mouseup', handleInteractionEnd);
     document.removeEventListener('touchmove', handleMove);
@@ -136,6 +137,7 @@ export function NotePanel({ note, onUpdate, onClose, onSplit, onFocus }: NotePan
     if (note.isDocked || note.isMaximized) return;
 
     setIsInteracting(true);
+    document.body.style.userSelect = 'none';
     
     const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
     const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
@@ -273,9 +275,9 @@ export function NotePanel({ note, onUpdate, onClose, onSplit, onFocus }: NotePan
             onTouchStart={(e) => handleInteractionStart(e, 'drag')}
             onDoubleClick={note.isDocked ? toggleDock : undefined}
           >
-            <div className={cn("flex items-center justify-between h-11 px-1", note.isDocked ? 'cursor-grab active:cursor-grabbing' : 'cursor-default')}>
+            <div className={cn("flex items-center justify-between h-11 px-1", note.isDocked || !note.isMaximized ? 'cursor-grab active:cursor-grabbing' : 'cursor-default')}>
                 {note.isDocked ? (
-                    <div className='flex items-center gap-2 w-full h-full cursor-grab active:cursor-grabbing px-2'>
+                    <div className='flex items-center gap-2 w-full h-full px-2'>
                         <GripVertical className='text-muted-foreground' />
                         <span className='font-bold text-lg'>C{noteNumber}</span>
                     </div>
@@ -365,10 +367,10 @@ export function NotePanel({ note, onUpdate, onClose, onSplit, onFocus }: NotePan
                 placeholder="Start typing..."
                 className={cn(
                   'w-full h-full resize-none border-none focus-visible:ring-0 focus-visible:ring-offset-0 p-8 select-text',
-                  'font-code leading-relaxed bg-local bg-repeat-y bg-[linear-gradient(theme(colors.border)_1px,transparent_1px)] bg-[length:100%_1lh]',
+                  'font-code leading-relaxed bg-local bg-[linear-gradient(rgba(0,0,0,0.1)_1px,transparent_1px)] bg-[length:100%_1lh]',
                   note.isDissolved && note.content ? 'animate-dissolve' : ''
                 )}
-                style={{ touchAction: 'auto' }}
+                style={{ backgroundAttachment: 'local', touchAction: 'auto' }}
                 value={note.content}
                 onChange={e => onUpdate({ id: note.id, content: e.target.value })}
                 onAnimationEnd={(e) => {

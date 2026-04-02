@@ -9,18 +9,17 @@ import { PlaceHolderImages } from '@/lib/placeholder-images';
 import Image from 'next/image';
 import { FilePlus2 } from 'lucide-react';
 
+const MIN_WIDTH = 250;
+const MIN_HEIGHT = 150;
+
 const initialNote: Note = {
   id: `note-${Date.now()}`,
   title: 'Conveyer1',
-  content: `Welcome to Conveyer!
-
-- Drag to move this window.
-- Resize from the bottom-right corner.
-- Use the menu for more options: split the page, summarize content, and more.`,
+  content: '',
   x: 100,
   y: 100,
-  width: 450,
-  height: 300,
+  width: MIN_WIDTH,
+  height: MIN_HEIGHT,
   isDocked: false,
   isMaximized: false,
   isTransparent: false,
@@ -37,7 +36,13 @@ export default function Home() {
   }, []);
   
   const handleCreateFirstNote = () => {
-    setNotes([initialNote]);
+    const centeredNote: Note = {
+      ...initialNote,
+      id: `note-${Date.now()}`,
+      x: (window.innerWidth / 2) - (MIN_WIDTH / 2),
+      y: (window.innerHeight / 2) - (MIN_HEIGHT / 2),
+    };
+    setNotes([centeredNote]);
   }
 
   const bringToFront = useCallback((id: string) => {
@@ -70,11 +75,11 @@ export default function Home() {
     const newNote: Note = {
       id: `note-${Date.now()}`,
       title: `Conveyer${maxNoteNumber + 1}`,
-      content: 'New Note',
+      content: '',
       x: (baseNote?.x ?? 150) + 30,
       y: (baseNote?.y ?? 150) + 30,
-      width: 450,
-      height: 300,
+      width: MIN_WIDTH,
+      height: MIN_HEIGHT,
       isDocked: false,
       isMaximized: false,
       isTransparent: false,

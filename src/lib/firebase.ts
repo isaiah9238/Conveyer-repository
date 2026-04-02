@@ -1,15 +1,20 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
 
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
 // Your web app's Firebase configuration
-export const firebaseConfig = {
-  apiKey: "FIREBASE_SERVICE_ACCOUNT",
-  NEXT_AUTH_DOMAIN: "studio-2772757020-e1e46.firebaseapp.com",
-  NEXT_PROJECT_ID: "studio-2772757020-e1e46",
-  NEXT_STORAGE_BUCKET: "studio-2772757020-e1e46.firebasestorage.app",
-  NEXT_MESSENGING_ID: "53908489351",
-  NEXT_APP_ID: "1:53908489351:web:f3281b9afe2dc20528a422"
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "FIREBASE_API_KEY",
+  authDomain: "conveyer-77c20.firebaseapp.com",
+  projectId: "conveyer-77c20",
+  storageBucket: "conveyer-77c20.firebasestorage.app",
+  messagingSenderId: "242374136903",
+  appId: "1:242374136903:web:4b0241e2d4d20c69fd0d62",
+  measurementId: "G-R3VMQLXB4Z"
 };
 
 // Initialize Firebase
-export const app = initializeApp(firebaseConfig);
+const app = initializeApp(firebaseConfig);
