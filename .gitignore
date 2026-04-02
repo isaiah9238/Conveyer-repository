@@ -52,3 +52,11 @@ build/
 .env.production.local
 # This covers all of them in one go:
 .env*.local
+
+node_modules
+.next
+.env
+.idx
+dist
+build
+pnpm-debug.log
