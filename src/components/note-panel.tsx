@@ -258,17 +258,24 @@ export function NotePanel({ note, onUpdate, onClose, onSplit, onFocus }: NotePan
         ref={panelRef}
         style={panelStyle}
         className={cn(
-          "absolute flex flex-col rounded-lg",
-          !isInteracting && "transition-all duration-200 ease-in-out",
+          "absolute flex flex-col rounded-lg transition-all duration-500", // Smoother transition
+          !isInteracting && "ease-in-out",
+          // Visual "Jump" feedback:
+          isOverTheWall ? "scale-95 brightness-110 shadow-[0_0_20px_rgba(0,255,255,0.3)]" : "scale-100",
           note.isTransparent && !note.isDocked && "opacity-30 hover:opacity-100 focus-within:opacity-100",
           note.isDocked && "opacity-20 hover:opacity-100 focus-within:opacity-100"
         )}
         onMouseDown={onFocus}
       >
         <Card className={cn(
-            "flex flex-col w-full h-full shadow-2xl border border-primary/10 overflow-hidden",
+            "flex flex-col w-full h-full shadow-2xl border transition-colors duration-500",
+            // Change theme when jumping over the wall!
+            isOverTheWall 
+              ? "bg-black border-cyan-500/50 text-cyan-400" 
+              : "bg-card border-primary/10",
             note.isMaximized && "rounded-none border-none shadow-none"
           )}>
+
           <CardHeader
             className="p-0 flex-shrink-0 bg-card/80 backdrop-blur-sm"
             onMouseDown={(e) => handleInteractionStart(e, 'drag')}
@@ -367,22 +374,40 @@ export function NotePanel({ note, onUpdate, onClose, onSplit, onFocus }: NotePan
           </CardHeader>
 
           {!note.isDocked && (
-            <CardContent className="p-0 flex-grow relative">
-              <Textarea
-                placeholder="Start typing..."
-                className={cn(
-                  'w-full h-full resize-none border-none focus-visible:ring-0 focus-visible:ring-offset-0 p-8 select-text',
-                  'font-code leading-relaxed bg-local bg-no-repeat bg-[linear-gradient(rgba(0,0,0,0.1)_1px,transparent_1px)] dark:bg-[linear-gradient(rgba(255,255,255,0.1)_1px,transparent_1px)] bg-[length:100%_1.6rem]'
-                )}
-                style={{ backgroundAttachment: 'local', touchAction: 'auto', lineHeight: '1.6' }}
+          <CardContent className="p-0 flex-grow relative flex flex-col">
+            <Textarea
+              // ... your existing Textarea props ...
+              className={cn(
+                'w-full flex-grow resize-none border-none focus-visible:ring-0 p-8',
+                // Change font/bg if we've jumped
+                isOverTheWall ? 'font-mono text-cyan-300' : 'font-code'
+              )}
                 value={note.content}
                 onChange={e => onUpdate({ id: note.id, content: e.target.value })}
-                onAnimationEnd={(e) => {
-                  if (e.animationName === 'neural-dissolve' && note.isDissolved) {
-                    onUpdate({ id: note.id, content: '' });
-                  }
-                }}
               />
+
+              {/* NEW: The Chat Interface for the "Black Space" */}
+              {isOverTheWall && (
+                <div className="p-4 border-t border-cyan-900/50 bg-black/50 backdrop-blur-md">
+                  <div className="flex gap-2">
+                    <Input 
+                      placeholder="Ask the Expert..." 
+                      className="bg-cyan-950/20 border-cyan-800 text-cyan-200 placeholder:text-cyan-800"
+                      onKeyDown={(e) => {
+                         if(e.key === 'Enter') {
+                           handleSparkMode(); // Or your new chat flow
+                         }
+                      }}
+                    />
+                    <Button size="sm" variant="ghost" className="text-cyan-500">
+                      <Send className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <p className="text-[10px] mt-2 opacity-50 uppercase tracking-widest text-center">
+                    In System Space - Data Permissions Active
+                  </p>
+                </div>
+              )}
             </CardContent>
           )}
 
