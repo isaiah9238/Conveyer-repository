@@ -1,4 +1,4 @@
-/
+4/
 ├── src/
 │   ├── ai/                # Genkit AI flows and configuration
 │   │   ├── flows/         # Contains all the AI-powered logic
