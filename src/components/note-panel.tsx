@@ -43,6 +43,7 @@ import {
   Loader2,
   Moon,
   Sun,
+  Send,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { sparkMode } from '@/ai/flows/spark-mode-flow';
@@ -104,11 +105,17 @@ export function NotePanel({ note, onUpdate, onClose, onSplit, onFocus }: NotePan
       newX = Math.max(0, Math.min(newX, innerWidth - panelWidth));
       newY = Math.max(0, Math.min(newY, innerHeight - panelHeight));
 
-      onUpdate({ id: note.id, x: newX, y: newY });
+      // Wrap this in requestAnimationFrame for smoothness
+      window.requestAnimationFrame(() => {
+        onUpdate({ id: note.id, x: newX, y: newY });
+      });
     } else if (type === 'resize') {
       const newW = Math.max(MIN_WIDTH, startW + clientX - startX);
       const newH = Math.max(MIN_HEIGHT, startH + clientY - startY);
-      onUpdate({ id: note.id, width: newW, height: newH });
+
+      window.requestAnimationFrame(() => {
+        onUpdate({ id: note.id, width: newW, height: newH });
+      });
     }
   }, [note.id, onUpdate]);
   
@@ -236,7 +243,7 @@ export function NotePanel({ note, onUpdate, onClose, onSplit, onFocus }: NotePan
     }
   };
 
-  const panelStyle: React.CSSProperties = {
+  const panelStyle: any = {
     '--min-width': `${MIN_WIDTH}px`,
     '--min-height': `${MIN_HEIGHT}px`,
     touchAction: 'none',
@@ -252,15 +259,19 @@ export function NotePanel({ note, onUpdate, onClose, onSplit, onFocus }: NotePan
 
   const noteNumber = note.title?.match(/\d+$/)?.[0];
 
+  // Calculate if the note has "jumped" past the barrier (70% of screen)
+  const barrierX = typeof window !== 'undefined' ? window.innerWidth * 0.5 : 0;
+  const isOverTheWall = note.x > barrierX;
+
   return (
     <>
       <div
         ref={panelRef}
         style={panelStyle}
         className={cn(
-          "absolute flex flex-col rounded-lg transition-all duration-500", // Smoother transition
-          !isInteracting && "ease-in-out",
-          // Visual "Jump" feedback:
+          "absolute flex flex-col rounded-lg",
+          // ONLY transition when NOT dragging or resizing
+          !isInteracting && "transition-all duration-500 ease-in-out", 
           isOverTheWall ? "scale-95 brightness-110 shadow-[0_0_20px_rgba(0,255,255,0.3)]" : "scale-100",
           note.isTransparent && !note.isDocked && "opacity-30 hover:opacity-100 focus-within:opacity-100",
           note.isDocked && "opacity-20 hover:opacity-100 focus-within:opacity-100"
@@ -289,7 +300,8 @@ export function NotePanel({ note, onUpdate, onClose, onSplit, onFocus }: NotePan
                         <span className='font-bold text-lg'>C{noteNumber}</span>
                     </div>
                 ) : (
-                  <div className="flex items-center">
+                  /* 1. Add 'min-w-0' and 'overflow-hidden' here to keep the menu inside the card */
+                  <div className="flex items-center min-w-0 overflow-hidden flex-grow">
                     {isEditingTitle ? (
                        <Input
                           value={note.title}
@@ -307,11 +319,14 @@ export function NotePanel({ note, onUpdate, onClose, onSplit, onFocus }: NotePan
                     ) : (
                       <span
                         onDoubleClick={() => setIsEditingTitle(true)}
-                        className="px-3 py-1.5 font-semibold text-lg rounded-sm cursor-pointer"
-                      >
+                       /* 2. Added 'truncate' so long titles don't push the menu off-screen */
+                        className="px-3 py-1.5 font-semibold text-lg rounded-sm cursor-pointer truncate"
+                          >
                         {note.title || 'Conveyer'}
                       </span>
                     )}
+                    {/* 3. Wrap the Menubar in a div that won't shrink, so the text stays visible */}
+                    <div className="flex-shrink-0">
                     <Menubar className="border-none bg-transparent shadow-none h-auto p-0">
                         <MenubarMenu>
                             <MenubarTrigger>File</MenubarTrigger>
@@ -367,6 +382,7 @@ export function NotePanel({ note, onUpdate, onClose, onSplit, onFocus }: NotePan
                         </MenubarMenu>
                     </Menubar>
                     </div>
+                  </div>
                 )}
                 <div className="flex-grow h-full" style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}></div>
                 <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onClose}><X className="h-4 w-4" /></Button>
