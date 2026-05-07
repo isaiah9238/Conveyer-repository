@@ -71,7 +71,7 @@ See [Common Errors](references/common-errors.md) for a list of deprecated APIs (
 1.  **Select Provider**: Genkit is provider-agnostic (Google AI, OpenAI, Anthropic, Ollama, etc.).
     -   If the user does not specify a provider, default to **Google AI**.
     -   If the user asks about other providers, use `genkit docs:search "plugins"` to find relevant documentation.
-2.  **Detect Framework**: Check `package.json` to identify the runtime (Next.js, Firebase, Express).
+2.  **Detect Framework**: Check `package.json` to identify the runtime (Next.js, Firebase, ).
     -   Look for `@genkit-ai/next`, `@genkit-ai/firebase`, or `@genkit-ai/google-cloud`.
     -   Adapt implementation to the specific framework's patterns.
 3.  **Follow Best Practices**:
