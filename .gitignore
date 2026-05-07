@@ -60,3 +60,8 @@ node_modules
 dist
 build
 pnpm-debug.log
+
+node_modules/
+dist/
+.git/
+package-lock.json
