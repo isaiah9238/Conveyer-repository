@@ -12,9 +12,6 @@ import {
   MenubarItem,
   MenubarMenu,
   MenubarSeparator,
-  MenubarSub,
-  MenubarSubContent,
-  MenubarSubTrigger,
   MenubarTrigger,
 } from '@/components/ui/menubar';
 import {
@@ -26,6 +23,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
 import { SummarizerDialog } from './summarizer-dialog';
 import {
   FilePlus2,
@@ -44,10 +47,12 @@ import {
   Moon,
   Sun,
   Send,
+  ChevronDown,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { sparkMode } from '@/ai/flows/spark-mode-flow';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { useTheme } from '@/components/theme-provider';
 
 interface NotePanelProps {
@@ -56,13 +61,14 @@ interface NotePanelProps {
   onClose: () => void;
   onSplit: () => void;
   onFocus: () => void;
+  otherNotes?: Note[];
 }
 
 const MIN_WIDTH = 250;
 const MIN_HEIGHT = 150;
 const DOCKED_SIZE = 120;
 
-export function NotePanel({ note, onUpdate, onClose, onSplit, onFocus }: NotePanelProps) {
+export function NotePanel({ note, onUpdate, onClose, onSplit, onFocus, otherNotes = [] }: NotePanelProps) {
   const [isSummarizerOpen, setIsSummarizerOpen] = useState(false);
   const [isInfoOpen, setIsInfoOpen] = useState(false);
   const [isInteracting, setIsInteracting] = useState(false);
@@ -70,6 +76,11 @@ export function NotePanel({ note, onUpdate, onClose, onSplit, onFocus }: NotePan
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const { toast } = useToast();
   const { theme, toggleTheme } = useTheme();
+
+  // Directive state
+  const [objective, setObjective] = useState('');
+  const [details, setDetails] = useState('');
+  const [outputFormat, setOutputFormat] = useState('');
 
   const panelRef = useRef<HTMLDivElement>(null);
   const interactionRef = useRef<{
@@ -105,7 +116,6 @@ export function NotePanel({ note, onUpdate, onClose, onSplit, onFocus }: NotePan
       newX = Math.max(0, Math.min(newX, innerWidth - panelWidth));
       newY = Math.max(0, Math.min(newY, innerHeight - panelHeight));
 
-      // Wrap this in requestAnimationFrame for smoothness
       window.requestAnimationFrame(() => {
         onUpdate({ id: note.id, x: newX, y: newY });
       });
@@ -165,7 +175,6 @@ export function NotePanel({ note, onUpdate, onClose, onSplit, onFocus }: NotePan
     document.addEventListener('touchend', handleInteractionEnd);
   }, [note.isDocked, note.isMaximized, onFocus, handleMove, handleInteractionEnd]);
 
-
   useEffect(() => {
     return () => {
       document.removeEventListener('mousemove', handleMove);
@@ -180,34 +189,53 @@ export function NotePanel({ note, onUpdate, onClose, onSplit, onFocus }: NotePan
     toast({ title: "Copied to clipboard!" });
   }
 
+  const handleMerge = (sourceNote: Note) => {
+    const formattedData = `\n\n--- MERGED FROM ${sourceNote.title} ---\n${sourceNote.content}`;
+    onUpdate({ id: note.id, content: note.content + formattedData });
+    toast({ title: `Merged content from ${sourceNote.title}` });
+  };
+
   const handleSummarize = (summary: string) => {
     onUpdate({ id: note.id, content: `${note.content}\n\n--- Summary ---\n${summary}` });
   };
   
   const handleSparkMode = async () => {
-    if (!note.content.trim()) {
+    const fullContext = `
+      Objective: ${objective}
+      Specific Details: ${details}
+      Desired Output: ${outputFormat}
+      
+      Current Note Content:
+      ${note.content}
+    `.trim();
+
+    if (!note.content.trim() && !objective.trim()) {
       toast({
-        title: 'Note is empty',
-        description: 'Write something in your note to get creative sparks.',
+        title: 'Input Required',
+        description: 'Provide content or an objective for the Courier.',
         variant: 'destructive',
       });
       return;
     }
     setIsSparking(true);
     try {
-      const ideas = await sparkMode({ noteContent: note.content });
+      const ideas = await sparkMode({ noteContent: fullContext });
       const formattedIdeas = ideas.map(idea => `- ${idea}`).join('\n');
-      const newContent = `${note.content}\n\n--- Sparks ---\n${formattedIdeas}`;
+      const newContent = `${note.content}\n\n--- Courier Response ---\n${formattedIdeas}`;
       onUpdate({ id: note.id, content: newContent });
       toast({
-        title: 'Sparks added!',
-        description: 'Creative ideas have been added to your note.',
+        title: 'Mission Complete',
+        description: 'The Courier has delivered new data.',
       });
+      // Reset directives after launch
+      setObjective('');
+      setDetails('');
+      setOutputFormat('');
     } catch (error) {
       console.error('Spark Mode failed', error);
       toast({
-        title: 'Spark Mode Failed',
-        description: (error as Error).message || 'Could not generate ideas.',
+        title: 'Mission Failure',
+        description: (error as Error).message || 'Courier intercepted or failed.',
         variant: 'destructive',
       });
     } finally {
@@ -221,7 +249,6 @@ export function NotePanel({ note, onUpdate, onClose, onSplit, onFocus }: NotePan
 
   const toggleDissolve = () => {
     if (note.isDissolved) {
-      // Restore
       const restoredText = note.dissolvedContent || '';
       const newContent = note.content
         ? `${note.content}\n\n${restoredText}`.trim()
@@ -233,11 +260,9 @@ export function NotePanel({ note, onUpdate, onClose, onSplit, onFocus }: NotePan
         dissolvedContent: undefined,
       });
     } else {
-      // Dissolve
       if (note.content) {
         onUpdate({ id: note.id, isDissolved: true, dissolvedContent: note.content });
       } else {
-        // Nothing to dissolve, just toggle state to allow writing and then restoring nothing.
         onUpdate({ id: note.id, isDissolved: true, dissolvedContent: '' });
       }
     }
@@ -258,8 +283,6 @@ export function NotePanel({ note, onUpdate, onClose, onSplit, onFocus }: NotePan
   }
 
   const noteNumber = note.title?.match(/\d+$/)?.[0];
-
-  // Calculate if the note has "jumped" past the barrier (70% of screen)
   const barrierX = typeof window !== 'undefined' ? window.innerWidth * 0.5 : 0;
   const isOverTheWall = note.x > barrierX;
 
@@ -270,7 +293,6 @@ export function NotePanel({ note, onUpdate, onClose, onSplit, onFocus }: NotePan
         style={panelStyle}
         className={cn(
           "absolute flex flex-col rounded-lg",
-          // ONLY transition when NOT dragging or resizing
           !isInteracting && "transition-all duration-500 ease-in-out", 
           isOverTheWall ? "scale-95 brightness-110 shadow-[0_0_20px_rgba(0,255,255,0.3)]" : "scale-100",
           note.isTransparent && !note.isDocked && "opacity-30 hover:opacity-100 focus-within:opacity-100",
@@ -280,7 +302,6 @@ export function NotePanel({ note, onUpdate, onClose, onSplit, onFocus }: NotePan
       >
         <Card className={cn(
             "flex flex-col w-full h-full shadow-2xl border transition-colors duration-500",
-            // Change theme when jumping over the wall!
             isOverTheWall 
               ? "bg-black border-cyan-500/50 text-cyan-400" 
               : "bg-card border-primary/10",
@@ -291,7 +312,6 @@ export function NotePanel({ note, onUpdate, onClose, onSplit, onFocus }: NotePan
             className="p-0 flex-shrink-0 bg-card/80 backdrop-blur-sm"
             onMouseDown={(e) => handleInteractionStart(e, 'drag')}
             onTouchStart={(e) => handleInteractionStart(e, 'drag')}
-            onDoubleClick={note.isDocked ? toggleDock : undefined}
           >
             <div className={cn("flex items-center justify-between h-11 px-1", note.isDocked || !note.isMaximized ? 'cursor-grab active:cursor-grabbing' : 'cursor-default')}>
                 {note.isDocked ? (
@@ -300,7 +320,6 @@ export function NotePanel({ note, onUpdate, onClose, onSplit, onFocus }: NotePan
                         <span className='font-bold text-lg'>C{noteNumber}</span>
                     </div>
                 ) : (
-                  /* 1. Add 'min-w-0' and 'overflow-hidden' here to keep the menu inside the card */
                   <div className="flex items-center min-w-0 overflow-hidden flex-grow">
                     {isEditingTitle ? (
                        <Input
@@ -319,19 +338,26 @@ export function NotePanel({ note, onUpdate, onClose, onSplit, onFocus }: NotePan
                     ) : (
                       <span
                         onDoubleClick={() => setIsEditingTitle(true)}
-                       /* 2. Added 'truncate' so long titles don't push the menu off-screen */
                         className="px-3 py-1.5 font-semibold text-lg rounded-sm cursor-pointer truncate"
-                          >
+                      >
                         {note.title || 'Conveyer'}
                       </span>
                     )}
-                    {/* 3. Wrap the Menubar in a div that won't shrink, so the text stays visible */}
                     <div className="flex-shrink-0">
                     <Menubar className="border-none bg-transparent shadow-none h-auto p-0">
                         <MenubarMenu>
                             <MenubarTrigger>File</MenubarTrigger>
                             <MenubarContent>
                                 <MenubarItem onClick={onSplit}><FilePlus2 className="mr-2 h-4 w-4" /> Split Page</MenubarItem>
+                                {otherNotes.length > 0 && (
+                                  <MenubarSeparator />
+                                )}
+                                {otherNotes.map(other => (
+                                  <MenubarItem key={other.id} onClick={() => handleMerge(other)}>
+                                    Merge from {other.title}
+                                  </MenubarItem>
+                                ))}
+                                <MenubarSeparator />
                                 <MenubarItem onClick={handleCopy}>Copy Content</MenubarItem>
                                 <MenubarSeparator />
                                 <MenubarItem onClick={onClose} className="text-destructive focus:bg-destructive/10 focus:text-destructive-foreground"><X className="mr-2 h-4 w-4" /> Close</MenubarItem>
@@ -340,10 +366,10 @@ export function NotePanel({ note, onUpdate, onClose, onSplit, onFocus }: NotePan
                         <MenubarMenu>
                             <MenubarTrigger>Edit</MenubarTrigger>
                             <MenubarContent>
-                                <MenubarItem onClick={() => setIsSummarizerOpen(true)}><Link className="mr-2 h-4 w-4" /> Summarize...</MenubarItem>
+                                <MenubarItem onClick={() => setIsSummarizerOpen(true)}><Link className="mr-2 h-4 w-4" /> External Feed...</MenubarItem>
                                 <MenubarItem onClick={handleSparkMode} disabled={isSparking}>
                                   {isSparking ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Lightbulb className="mr-2 h-4 w-4" />}
-                                  Spark Ideas
+                                  Spark Mission
                                 </MenubarItem>
                             </MenubarContent>
                         </MenubarMenu>
@@ -357,71 +383,101 @@ export function NotePanel({ note, onUpdate, onClose, onSplit, onFocus }: NotePan
                                 <MenubarSeparator />
                                 <MenubarItem onClick={toggleDissolve}>
                                   <Sparkles className="mr-2 h-4 w-4" />
-                                  {note.isDissolved ? 'Restore Text' : 'Dissolve Text'}
+                                  {note.isDissolved ? 'Restore Data' : 'Dissolve Data'}
                                 </MenubarItem>
                                 <MenubarItem onClick={toggleTransparency}>
                                   {note.isTransparent ? <Eye className="mr-2 h-4 w-4" /> : <EyeOff className="mr-2 h-4 w-4" />}
-                                  {note.isTransparent ? 'Make Opaque' : 'Make Transparent'}
+                                  {note.isTransparent ? 'Opaque Mode' : 'Ghost Mode'}
                                 </MenubarItem>
                                 <MenubarSeparator />
                                 <MenubarItem onClick={toggleDock}>
                                   {note.isDocked ? <Expand className="mr-2 h-4 w-4" /> : <Dock className="mr-2 h-4 w-4" />}
-                                  {note.isDocked ? 'Undock' : 'Dock'}
+                                  {note.isDocked ? 'Undock' : 'Dock to Cube'}
                                 </MenubarItem>
                                 <MenubarItem onClick={toggleMaximize}>
                                   {note.isMaximized ? <Shrink className="mr-2 h-4 w-4" /> : <Expand className="mr-2 h-4 w-4" />}
-                                  {note.isMaximized ? 'Restore' : 'Fill Screen'}
+                                  {note.isMaximized ? 'Exit Fullscreen' : 'Fullscreen'}
                                 </MenubarItem>
                             </MenubarContent>
                         </MenubarMenu>
                          <MenubarMenu>
                             <MenubarTrigger>Help</MenubarTrigger>
                             <MenubarContent>
-                                <MenubarItem onClick={() => setIsInfoOpen(true)}><Info className="mr-2 h-4 w-4" /> About</MenubarItem>
+                                <MenubarItem onClick={() => setIsInfoOpen(true)}><Info className="mr-2 h-4 w-4" /> Protocols & About</MenubarItem>
                             </MenubarContent>
                         </MenubarMenu>
                     </Menubar>
                     </div>
                   </div>
                 )}
-                <div className="flex-grow h-full" style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}></div>
                 <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onClose}><X className="h-4 w-4" /></Button>
             </div>
           </CardHeader>
 
           {!note.isDocked && (
-          <CardContent className="p-0 flex-grow relative flex flex-col">
+          <CardContent className="p-0 flex-grow relative flex flex-col overflow-hidden">
             <Textarea
-              // ... your existing Textarea props ...
-              className={cn(
-                'w-full flex-grow resize-none border-none focus-visible:ring-0 p-8',
-                // Change font/bg if we've jumped
-                isOverTheWall ? 'font-mono text-cyan-300' : 'font-code'
-              )}
+                placeholder="Secure Mission Log..."
+                className={cn(
+                  'w-full flex-grow resize-none border-none focus-visible:ring-0 p-6 bg-transparent',
+                  isOverTheWall ? 'font-mono text-cyan-300' : 'font-body'
+                )}
                 value={note.content}
                 onChange={e => onUpdate({ id: note.id, content: e.target.value })}
               />
 
-              {/* NEW: The Chat Interface for the "Black Space" */}
+              <div className="px-4 pb-4 mt-auto">
+                 <Accordion type="single" collapsible className="w-full border-t border-primary/10">
+                    <AccordionItem value="directives" className="border-none">
+                      <AccordionTrigger className="py-2 text-xs uppercase tracking-widest text-muted-foreground hover:no-underline">
+                        Mission Directives
+                      </AccordionTrigger>
+                      <AccordionContent className="space-y-3 pb-2">
+                        <div className="space-y-1">
+                          <Label className="text-[10px] uppercase opacity-50">Objective</Label>
+                          <Input 
+                            value={objective}
+                            onChange={(e) => setObjective(e.target.value)}
+                            placeholder="Clear objective statement..." 
+                            className="h-8 text-xs bg-muted/30 border-primary/5"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-[10px] uppercase opacity-50">Parameters</Label>
+                          <Input 
+                            value={details}
+                            onChange={(e) => setDetails(e.target.value)}
+                            placeholder="Keywords, context, constraints..." 
+                            className="h-8 text-xs bg-muted/30 border-primary/5"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-[10px] uppercase opacity-50">Output Format</Label>
+                          <Input 
+                            value={outputFormat}
+                            onChange={(e) => setOutputFormat(e.target.value)}
+                            placeholder="Table, bullets, summary..." 
+                            className="h-8 text-xs bg-muted/30 border-primary/5"
+                          />
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                 </Accordion>
+                 
+                 <Button 
+                    className="w-full mt-2 group bg-primary/10 hover:bg-primary text-primary hover:text-primary-foreground border-primary/20" 
+                    variant="outline"
+                    onClick={handleSparkMode}
+                    disabled={isSparking}
+                  >
+                    {isSparking ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />}
+                    Launch Mission
+                 </Button>
+              </div>
+
               {isOverTheWall && (
-                <div className="p-4 border-t border-cyan-900/50 bg-black/50 backdrop-blur-md">
-                  <div className="flex gap-2">
-                    <Input 
-                      placeholder="Ask the Expert..." 
-                      className="bg-cyan-950/20 border-cyan-800 text-cyan-200 placeholder:text-cyan-800"
-                      onKeyDown={(e) => {
-                         if(e.key === 'Enter') {
-                           handleSparkMode(); // Or your new chat flow
-                         }
-                      }}
-                    />
-                    <Button size="sm" variant="ghost" className="text-cyan-500">
-                      <Send className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  <p className="text-[10px] mt-2 opacity-50 uppercase tracking-widest text-center">
-                    In System Space - Data Permissions Active
-                  </p>
+                <div className="absolute inset-x-0 bottom-0 p-1 pointer-events-none opacity-20">
+                   <p className="text-[8px] uppercase tracking-[0.3em] text-center text-cyan-500">System Space Active</p>
                 </div>
               )}
             </CardContent>
@@ -444,17 +500,56 @@ export function NotePanel({ note, onUpdate, onClose, onSplit, onFocus }: NotePan
       <SummarizerDialog open={isSummarizerOpen} onOpenChange={setIsSummarizerOpen} onSummarize={handleSummarize} />
       
       <AlertDialog open={isInfoOpen} onOpenChange={setIsInfoOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <AlertDialogHeader>
-            <AlertDialogTitle>About Conveyer</AlertDialogTitle>
-            <AlertDialogDescription>
-              A fluid, always-on-top information conveyor designed for seamless information transfer and management.
-              <br/><br/>
-              Version 1.0.0
+            <AlertDialogTitle className="text-2xl font-headline flex items-center gap-2">
+               <Info className="text-primary" /> Conveyer Protocols
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-6 pt-4 text-foreground">
+              <section>
+                <h3 className="font-bold text-primary uppercase tracking-wider text-sm mb-2">About the System</h3>
+                <p>A fluid, always-on-top information conveyor designed for seamless data transfer and AI-augmented thought processing.</p>
+              </section>
+
+              <section className="space-y-4">
+                <h3 className="font-bold text-primary uppercase tracking-wider text-sm">Mission Directive Guidelines</h3>
+                <p className="text-muted-foreground text-xs italic">To improve performance, focus on these core areas:</p>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <h4 className="font-semibold text-sm">1. Clarity & Specificity</h4>
+                    <p className="text-xs text-muted-foreground">Ensure each directive is unambiguous and leaves no room for misinterpretation. Use precise language.</p>
+                  </div>
+                  <div className="space-y-1">
+                    <h4 className="font-semibold text-sm">2. Scope & Boundaries</h4>
+                    <p className="text-xs text-muted-foreground">Clearly define what is within the directive's purview and what is outside. This prevents overreach.</p>
+                  </div>
+                  <div className="space-y-1">
+                    <h4 className="font-semibold text-sm">3. Prioritization</h4>
+                    <p className="text-xs text-muted-foreground">Establish a clear hierarchy for directives to resolve potential conflicts during execution.</p>
+                  </div>
+                  <div className="space-y-1">
+                    <h4 className="font-semibold text-sm">4. Measurability</h4>
+                    <p className="text-xs text-muted-foreground">Incorporate metrics or observable outcomes that indicate successful adherence to the directive.</p>
+                  </div>
+                  <div className="space-y-1">
+                    <h4 className="font-semibold text-sm">5. Adaptability</h4>
+                    <p className="text-xs text-muted-foreground">Design directives to be robust enough to handle varying conditions using principles rather than rigid steps.</p>
+                  </div>
+                  <div className="space-y-1">
+                    <h4 className="font-semibold text-sm">6. Conciseness</h4>
+                    <p className="text-xs text-muted-foreground">Remove unnecessary jargon or redundant phrasing to make directives easy to apply.</p>
+                  </div>
+                </div>
+              </section>
+
+              <p className="text-[10px] text-muted-foreground text-center border-t pt-4">
+                System Version 1.1.0 | Signal Strength: Optimized
+              </p>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogAction>OK</AlertDialogAction>
+            <AlertDialogAction className="bg-primary text-primary-foreground hover:bg-primary/90">Acknowledged</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
