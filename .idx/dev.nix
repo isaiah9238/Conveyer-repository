@@ -1,42 +1,32 @@
-# To learn more about how to use Nix to configure your environment
-# see: https://firebase.google.com/docs/studio/customize-workspace
-{pkgs}: {
-  # Which nixpkgs channel to use.
-  channel = "stable-24.11"; # or "unstable"
-  # Use https://search.nixos.org/packages to find packages
+{ pkgs }: {
+  # Channel for reproducible environment
+  channel = "stable-24.11"; 
+
+  # Combined System Tools
   packages = [
-    pkgs.nodejs_22
-    pkgs.zulu
-    pkgs.pnpm_10
+    pkgs.nodejs_22        # Sticking with 22 as requested earlier
+    pkgs.pnpm
+    pkgs.zulu             # For Java/Emulators
+    pkgs.firebase-tools   # Moved here to resolve duplication
   ];
-  # Sets environment variables in the workspace
-  env = {};
-  # This adds a file watcher to startup the firebase emulators. The emulators will only start if
-  # a firebase.json file is written into the user's directory
-  services.firebase.emulators = {
-    # Disabling because we are using prod backends right now
-    detect = false;
-    projectId = "demo-app";
-    services = ["auth" "firestore"];
-  };
+
+  # IDX-specific configuration
   idx = {
-    # Search for the extensions you want on https://open-vsx.org/ and use "publisher.id"
-    extensions = [
-      # "vscodevim.vim"
-    ];
+    extensions = [ "mtxr.sqltools" ];
+    
     workspace = {
       onCreate = {
-        default.openFiles = [
-          "src/app/page.tsx"
-        ];
+        install = "pnpm install";
+        default.openFiles = [ "src/app/page.tsx" ];
       };
     };
-    # Enable previews and customize configuration
+
+    # Correct way to enable Firebase Emulators in IDX
     previews = {
       enable = true;
       previews = {
         web = {
-          command = [ "pnpm" "run" "dev" ];
+          command = [ "pnpm" "run" "dev" "--" "--host" "0.0.0.0" "--port" "$PORT" ];
           manager = "web";
         };
       };
