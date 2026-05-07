@@ -46,18 +46,29 @@ This roadmap outlines the planned AI capabilities for Conveyer.
 *   **Auto-Tagging:** Automatically detect topics and assign tags to group notes.
 *   **Memory Modes:**
     *   **Remember:** Save important notes, perhaps compressing them into "memory seeds."
-    *   **Forget:** Visually dissolve text and decide whether to delete it permanently or archive a summary.
-*   **Duplicate Mode:** Clone a note into a new floating panel for parallel brainstorming.
+        *   **Forget:** Visually dissolve text and decide whether to delete it permanently or archive a summary.
+        *   **Duplicate Mode:** Clone a note into a new floating panel for parallel brainstorming.
 
-#### 🔥 Creative & Ideation Functions
-*   **Spark Mode:** Suggest new ideas, improvements, or connections based on the note's content.
+        #### 🔥 Creative & Ideation Functions
+        *   **Spark Mode:** Suggest new ideas, improvements, or connections based on the note's content.
 
-#### 🧊 Bonus Feature Ideas
-*   **"Freeze Frame":** Lock a note in place (no edits, no dissolving) for reference.
-*   **"Feather Mode":** An ultra-light, non-intrusive mode showing only keywords.
+        #### 🧊 Bonus Feature Ideas
+        *   **"Freeze Frame":** Lock a note in place (no edits, no dissolving) for reference.
+        *   **"Feather Mode":** An ultra-light, non-intrusive mode showing only keywords.
 
 ---
 
 ## 4. Technical Notes: What is Electron?
 
 Electron is a framework for building desktop applications using web technologies (HTML, CSS, JavaScript). It's what makes features like `alwaysOnTop`, `transparent` windows, and `click-through` modes possible, as these are not allowed by standard web browsers. It acts as a "wrapper" for the Next.js application, giving it desktop superpowers.
+
+---
+
+## 5. Maintenance & Setup Logs
+
+### Project Cleanup (May 2026)
+*   **Disk Space Optimization:** Performed a sweep of the project to free up disk space. Removed generated and historical caches (`.next/`, `.genkit/` traces, and `.modified`). `node_modules/` (~2.2GB) was left intact so the project remains runnable without a full reinstall.
+
+### Package Manager Strategy
+*   **Use `pnpm`:** This project is explicitly configured for `pnpm` (via `pnpm-workspace.yaml` and `pnpm-lock.yaml`). 
+*   **Known Issue with `npm`:** Running `npm install` (even with `--legacy-peer-deps`) fails with a known internal npm v10.9.2 bug (`Cannot read properties of null (reading 'matches')`). This occurs due to complex peer dependency resolution paths triggered by React 19 and Next.js 15. `pnpm install` handles this tree perfectly. Always use `pnpm` for managing dependencies in this workspace.
