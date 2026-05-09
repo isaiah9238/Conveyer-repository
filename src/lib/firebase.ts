@@ -1,18 +1,30 @@
-import { initializeApp, getApps, getApp } from "firebase/app";
+import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
+import { connectAuthEmulator } from "firebase/auth";
+import { connectFirestoreEmulator } from "firebase/firestore";
+import { getApps, getApp } from "firebase/app";
 
 const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
+  apiKey: "FIREBASE_API_KEY",
+  authDomain: "demo-conveyer.firebaseapp.com",
+  //projectId: "conveyer-77c20",
+  storageBucket: "demo-conveyer.firebasestorage.app",
+  messagingSenderId: "242374136903",
+  appId: "1:242374136903:web:4b0241e2d4d20c69fd0d62",
+  measurementId: "G-R3VMQLXB4Z",
+  projectId: "demo-conveyer", // Match what you used in the backend init
 };
 
 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
-const auth = getAuth(app);
 const db = getFirestore(app);
+const auth = getAuth(app);
 
-export { app, auth, db };
+// THE BRIDGE: Connect to emulators if running on localhost/IDX
+if (process.env.NODE_ENV === 'development') {
+  connectFirestoreEmulator(db, '127.0.0.1', 8080);
+  connectAuthEmulator(auth, "http://127.0.0.1:9099");
+  console.log("Connected to Firebase Emulators");
+}
+
+export { app, db, auth };
