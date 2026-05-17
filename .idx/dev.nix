@@ -1,34 +1,39 @@
-{ pkgs }: {
-  # Channel for reproducible environment
-  channel = "stable-24.11"; 
-
-  # Combined System Tools
+{ pkgs, ... }: {
+  # Which nixpkgs channel to use.
+  channel = "stable-24.05";
+  # Use https://search.nixos.org/packages to find packages
   packages = [
-    pkgs.nodejs_22        # Sticking with 22 as requested earlier
-    pkgs.pnpm
-    pkgs.zulu             # For Java/Emulators
-    pkgs.firebase-tools   # Moved here to resolve duplication
+    pkgs.nodejs_20
+    pkgs.corepack_20
   ];
-
-  # IDX-specific configuration
+  # Sets environment variables in the workspace
+  env = {};
   idx = {
-    extensions = [ "mtxr.sqltools" ];
-    
-    workspace = {
-      onCreate = {
-        install = "pnpm install";
-        default.openFiles = [ "src/app/page.tsx" ];
-      };
-    };
-
-    # Correct way to enable Firebase Emulators in IDX
+    # Search for the extensions you want on https://open-vsx.org/ and use "publisher.id"
+    extensions = [
+      "dracula-theme.theme-dracula"
+    ];
+    # Enable previews and customize configuration
     previews = {
       enable = true;
       previews = {
         web = {
-          command = [ "pnpm" "run" "dev" "3000" "--host" "0.0.0.0" "--port" "$PORT" ];
+          # Use pnpm and correct Next.js 15 flag --hostname
+          command = [ "pnpm" "run" "dev" "--" "--port" "$PORT" "--hostname" "0.0.0.0" ];
           manager = "web";
         };
+      };
+    };
+    # Workspace lifecycle hooks
+    workspace = {
+      # Runs when a workspace is first created
+      onCreate = {
+        # Install dependencies using pnpm
+        install = "corepack enable && pnpm install";
+      };
+      # Runs when the workspace is (re)started
+      onStart = {
+        # Optional: any background watch tasks
       };
     };
   };
